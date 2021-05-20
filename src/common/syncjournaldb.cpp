@@ -47,7 +47,7 @@ Q_LOGGING_CATEGORY(lcDb, "nextcloud.sync.database", QtInfoMsg)
 
 #define GET_FILE_RECORD_QUERY \
         "SELECT path, inode, modtime, type, md5, fileid, remotePerm, filesize," \
-        "  ignoredChildrenRemote, contentchecksumtype.name || ':' || contentChecksum, e2eMangledName, isE2eEncrypted " \
+        "  ignoredChildrenRemote, contentchecksumtype.name || ':' || contentChecksum, e2eMangledName, isE2eEncrypted, fileSizeE2EE " \
         " FROM metadata" \
         "  LEFT JOIN checksumtype as contentchecksumtype ON metadata.contentChecksumTypeId == contentchecksumtype.id"
 
@@ -65,6 +65,7 @@ static void fillFileRecordFromGetQuery(SyncJournalFileRecord &rec, SqlQuery &que
     rec._checksumHeader = query.baValue(9);
     rec._e2eMangledName = query.baValue(10);
     rec._isE2eEncrypted = query.intValue(11) > 0;
+    rec._fileSizeE2EE = query.int64Value(12);
 }
 
 static QByteArray defaultJournalMode(const QString &dbPath)
@@ -380,6 +381,7 @@ bool SyncJournalDb::checkConnect()
                         // ignoredChildrenRemote
                         // contentChecksum
                         // contentChecksumTypeId
+                        // fileSizeE2EE
                         "PRIMARY KEY(phash)"
                         ");");
 
@@ -771,6 +773,16 @@ bool SyncJournalDb::updateMetadataTableStructure()
         commitInternal(QStringLiteral("update database structure: add isE2eEncrypted col"));
     }
 
+    if (columns.indexOf("fileSizeE2EE") == -1) {
+        SqlQuery query(_db);
+        query.prepare("ALTER TABLE metadata ADD COLUMN fileSizeE2EE BIGINT;");
+        if (!query.exec()) {
+            sqlFail(QStringLiteral("updateDatabaseStructure: add column fileSizeE2EE"), query);
+            re = false;
+        }
+        commitInternal(QStringLiteral("update database structure: add fileSizeE2EE col"));
+    }
+
     auto uploadInfoColumns = tableColumns("uploadinfo");
     if (uploadInfoColumns.isEmpty())
         return false;
@@ -938,8 +950,8 @@ bool SyncJournalDb::setFileRecord(const SyncJournalFileRecord &_record)
 
         if (!_setFileRecordQuery.initOrReset(QByteArrayLiteral(
             "INSERT OR REPLACE INTO metadata "
-            "(phash, pathlen, path, inode, uid, gid, mode, modtime, type, md5, fileid, remotePerm, filesize, ignoredChildrenRemote, contentChecksum, contentChecksumTypeId, e2eMangledName, isE2eEncrypted) "
-            "VALUES (?1 , ?2, ?3 , ?4 , ?5 , ?6 , ?7,  ?8 , ?9 , ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18);"), _db)) {
+            "(phash, pathlen, path, inode, uid, gid, mode, modtime, type, md5, fileid, remotePerm, filesize, ignoredChildrenRemote, contentChecksum, contentChecksumTypeId, e2eMangledName, isE2eEncrypted, fileSizeE2EE) "
+            "VALUES (?1 , ?2, ?3 , ?4 , ?5 , ?6 , ?7,  ?8 , ?9 , ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19);"), _db)) {
             return false;
         }
 
@@ -961,6 +973,7 @@ bool SyncJournalDb::setFileRecord(const SyncJournalFileRecord &_record)
         _setFileRecordQuery.bindValue(16, contentChecksumTypeId);
         _setFileRecordQuery.bindValue(17, record._e2eMangledName);
         _setFileRecordQuery.bindValue(18, record._isE2eEncrypted);
+        _setFileRecordQuery.bindValue(19, record._fileSizeE2EE);
 
         if (!_setFileRecordQuery.exec()) {
             return false;

@@ -21,7 +21,6 @@
 #include "hydrationjob.h"
 #include "syncfileitem.h"
 #include "filesystem.h"
-#include "common/constants.h"
 #include "common/syncjournaldb.h"
 
 #include <cfapi.h>
@@ -121,7 +120,7 @@ Result<void, QString> VfsCfApi::updateMetadata(const QString &filePath, time_t m
 
     const auto syncItem = *SyncFileItem::fromSyncJournalFileRecord(record).data();
 
-    const auto finalSize = calculatePlaceholderSize(syncItem);
+    const auto finalSize = syncItem.sizeForVfsPlaceholder();
 
     if (handle) {
         return cfapi::updatePlaceholderInfo(handle, modtime, finalSize, fileId);
@@ -135,7 +134,7 @@ Result<void, QString> VfsCfApi::createPlaceholder(const SyncFileItem &item)
 {
     Q_ASSERT(params().filesystemPath.endsWith('/'));
     const auto localPath = QDir::toNativeSeparators(params().filesystemPath + item._file);
-    const auto size = calculatePlaceholderSize(item);
+    const auto size = item.sizeForVfsPlaceholder();
     const auto result = cfapi::createPlaceholderInfo(localPath, item._modtime, size, item._fileId);
     return result;
 }
@@ -169,7 +168,7 @@ Result<void, QString> VfsCfApi::convertToPlaceholder(const QString &filename, co
     const auto localPath = QDir::toNativeSeparators(filename);
     const auto replacesPath = QDir::toNativeSeparators(replacesFile);
 
-    const auto size = calculatePlaceholderSize(item);
+    const auto size = item.sizeForVfsPlaceholder();
 
     const auto handle = cfapi::handleForPath(localPath);
     if (cfapi::findPlaceholderInfo(handle)) {
@@ -389,7 +388,7 @@ void VfsCfApi::scheduleHydrationJob(const QString &requestId, const QString &fol
     job->setFolderPath(folderPath);
     job->setIsEncryptedFile(record._isE2eEncrypted || !record._e2eMangledName.isEmpty());
     job->setEncryptedFileName(record._e2eMangledName);
-    job->setFileTotalSize(record._fileSize);
+    job->setFileTotalSize((!record._e2eMangledName.isEmpty() && record._fileSizeE2EE > 0) ? record._fileSizeE2EE : record._fileSize);
     connect(job, &HydrationJob::finished, this, &VfsCfApi::onHydrationJobFinished);
     d->hydrationJobs << job;
     job->start();
@@ -421,11 +420,6 @@ int VfsCfApi::finalizeHydrationJob(const QString &requestId)
     }
 
     return HydrationJob::Status::Error;
-}
-
-qint64 VfsCfApi::calculatePlaceholderSize(const SyncFileItem &item) const
-{
-    return (!item.isDirectory() && (item._isEncrypted || !item._encryptedFileName.isEmpty())) ? item._size - OCC::CommonConstants::e2EeTagSize : item._size;
 }
 
 VfsCfApi::HydratationAndPinStates VfsCfApi::computeRecursiveHydrationAndPinStates(const QString &folderPath, const Optional<PinState> &basePinState)
