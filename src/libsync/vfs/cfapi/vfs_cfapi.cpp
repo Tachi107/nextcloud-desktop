@@ -21,6 +21,7 @@
 #include "hydrationjob.h"
 #include "syncfileitem.h"
 #include "filesystem.h"
+#include "common/constants.h"
 #include "common/syncjournaldb.h"
 
 #include <cfapi.h>
@@ -109,11 +110,24 @@ Result<void, QString> VfsCfApi::updateMetadata(const QString &filePath, time_t m
 {
     const auto localPath = QDir::toNativeSeparators(filePath);
     const auto handle = cfapi::handleForPath(localPath);
+
+    SyncJournalFileRecord record;
+    const auto journal = params().journal;
+    journal->getFileRecord(filePath, &record);
+    if (!record.isValid()) {
+        qCInfo(lcCfApi) << "Couldn't update metadata for non existing file" << localPath;
+        return { "Couldn't update metadata" };
+    }
+
+    const auto syncItem = *SyncFileItem::fromSyncJournalFileRecord(record).data();
+
+    const auto finalSize = calculatePlaceholderSize(syncItem);
+
     if (handle) {
-        return cfapi::updatePlaceholderInfo(handle, modtime, size, fileId);
+        return cfapi::updatePlaceholderInfo(handle, modtime, finalSize, fileId);
     } else {
         qCWarning(lcCfApi) << "Couldn't update metadata for non existing file" << localPath;
-        return "Couldn't update metadata";
+        return { "Couldn't update metadata" };
     }
 }
 
@@ -121,7 +135,8 @@ Result<void, QString> VfsCfApi::createPlaceholder(const SyncFileItem &item)
 {
     Q_ASSERT(params().filesystemPath.endsWith('/'));
     const auto localPath = QDir::toNativeSeparators(params().filesystemPath + item._file);
-    const auto result = cfapi::createPlaceholderInfo(localPath, item._modtime, item._size, item._fileId);
+    const auto size = calculatePlaceholderSize(item);
+    const auto result = cfapi::createPlaceholderInfo(localPath, item._modtime, size, item._fileId);
     return result;
 }
 
@@ -154,11 +169,13 @@ Result<void, QString> VfsCfApi::convertToPlaceholder(const QString &filename, co
     const auto localPath = QDir::toNativeSeparators(filename);
     const auto replacesPath = QDir::toNativeSeparators(replacesFile);
 
+    const auto size = calculatePlaceholderSize(item);
+
     const auto handle = cfapi::handleForPath(localPath);
     if (cfapi::findPlaceholderInfo(handle)) {
-        return cfapi::updatePlaceholderInfo(handle, item._modtime, item._size, item._fileId, replacesPath);
+        return cfapi::updatePlaceholderInfo(handle, item._modtime, size, item._fileId, replacesPath);
     } else {
-        return cfapi::convertToPlaceholder(handle, item._modtime, item._size, item._fileId, replacesPath);
+        return cfapi::convertToPlaceholder(handle, item._modtime, size, item._fileId, replacesPath);
     }
 }
 
@@ -404,6 +421,11 @@ int VfsCfApi::finalizeHydrationJob(const QString &requestId)
     }
 
     return HydrationJob::Status::Error;
+}
+
+qint64 VfsCfApi::calculatePlaceholderSize(const SyncFileItem &item) const
+{
+    return (!item.isDirectory() && (item._isEncrypted || !item._encryptedFileName.isEmpty())) ? item._size - OCC::CommonConstants::e2EeTagSize : item._size;
 }
 
 VfsCfApi::HydratationAndPinStates VfsCfApi::computeRecursiveHydrationAndPinStates(const QString &folderPath, const Optional<PinState> &basePinState)
