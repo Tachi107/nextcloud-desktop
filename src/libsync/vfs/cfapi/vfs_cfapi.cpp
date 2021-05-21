@@ -386,9 +386,10 @@ void VfsCfApi::scheduleHydrationJob(const QString &requestId, const QString &fol
     job->setJournal(params().journal);
     job->setRequestId(requestId);
     job->setFolderPath(folderPath);
-    job->setIsEncryptedFile(record._isE2eEncrypted || !record._e2eMangledName.isEmpty());
+    // do we need to both set bool and QString? is just one not going to be enough?
+    job->setIsEncryptedFile(!record._e2eMangledName.isEmpty());
     job->setEncryptedFileName(record._e2eMangledName);
-    job->setFileTotalSize((!record._e2eMangledName.isEmpty() && record._fileSizeE2EE > 0) ? record._fileSizeE2EE : record._fileSize);
+    job->setFileTotalSize(record._fileSize);
     connect(job, &HydrationJob::finished, this, &VfsCfApi::onHydrationJobFinished);
     d->hydrationJobs << job;
     job->start();
