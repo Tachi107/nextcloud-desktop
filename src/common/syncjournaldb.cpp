@@ -916,10 +916,11 @@ qint64 SyncJournalDb::getPHash(const QByteArray &file)
 
 bool SyncJournalDb::setFileRecord(const SyncJournalFileRecord &_record)
 {
-    if (_record._fileSizeNonE2EE != 0 && _record._fileSize == _record._fileSizeNonE2EE) {
-        int a = 5;
-        a = 6;
+    Q_ASSERT(_record._e2eMangledName.isEmpty() || _record._fileSizeNonE2EE != 0);
+    if (!_record._e2eMangledName.isEmpty() && _record._fileSizeNonE2EE == 0) {
+        qCWarning(lcDb) << "Set file record with zeron Non E2EE size for an E2EE encrypted file.";
     }
+
     SyncJournalFileRecord record = _record;
     QMutexLocker locker(&_mutex);
 
