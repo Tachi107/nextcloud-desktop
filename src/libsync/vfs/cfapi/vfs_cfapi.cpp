@@ -332,27 +332,6 @@ void VfsCfApi::requestHydration(const QString &requestId, const QString &path)
         emit hydrationRequestFailed(requestId);
         return;
     }
-
-    // This is impossible to handle with CfAPI since the file size is generally different
-    // between the encrypted and the decrypted file which would make CfAPI reject the hydration
-    // of the placeholder with decrypted data
-    if (record._isE2eEncrypted || !record._e2eMangledName.isEmpty()) {
-        qCInfo(lcCfApi) << "Couldn't hydrate, the file is E2EE this is not supported";
-
-        QMessageBox e2eeFileDownloadRequestWarningMsgBox;
-        e2eeFileDownloadRequestWarningMsgBox.setText(tr("Download of end-to-end encrypted file failed"));
-        e2eeFileDownloadRequestWarningMsgBox.setInformativeText(tr("It seems that you are trying to download a virtual file that"
-                                                                   " is end-to-end encrypted. Implicitly downloading such files is not"
-                                                                   " supported at the moment. To workaround this issue, go to the"
-                                                                   " settings and mark the encrypted folder with \"Make always available"
-                                                                   " locally\"."));
-        e2eeFileDownloadRequestWarningMsgBox.setIcon(QMessageBox::Warning);
-        e2eeFileDownloadRequestWarningMsgBox.exec();
-
-        emit hydrationRequestFailed(requestId);
-        return;
-    }
-
     // All good, let's hydrate now
     scheduleHydrationJob(requestId, relativePath, record);
 }
