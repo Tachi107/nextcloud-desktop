@@ -18,6 +18,7 @@
 #include "config.h"
 #include "common/utility.h"
 #include "tray/UserModel.h"
+#include "configfile.h"
 
 #include <QCursor>
 #include <QGuiApplication>
@@ -205,7 +206,9 @@ bool Systray::isOpen()
 
 Qt::WindowFlags Systray::windowFlags() const
 {
-    if (isSystemTrayAvailable()) {
+    ConfigFile cfg;
+
+    if (isSystemTrayAvailable() && !cfg.showMainDialogAsNormalWindow()) {
         return Qt::Dialog | Qt::FramelessWindowHint;
     }
     return Qt::Dialog;
@@ -213,7 +216,9 @@ Qt::WindowFlags Systray::windowFlags() const
 
 qreal Systray::windowRadius() const
 {
-    if (isSystemTrayAvailable()) {
+    ConfigFile cfg;
+
+    if (isSystemTrayAvailable() && !cfg.showMainDialogAsNormalWindow()) {
         return systrayWindowRadius;
     }
     return 0.0;
@@ -221,7 +226,9 @@ qreal Systray::windowRadius() const
 
 qreal Systray::windowWidth() const
 {
-    if (isSystemTrayAvailable()) {
+    ConfigFile cfg;
+
+    if (isSystemTrayAvailable() && !cfg.showMainDialogAsNormalWindow()) {
         return systrayWindowWidth;
     }
     return systrayWindowHeight;
@@ -293,7 +300,8 @@ void Systray::positionWindow(QQuickWindow *window) const
 {
     window->setScreen(currentScreen());
 
-    if (isSystemTrayAvailable()) {
+    ConfigFile cfg;
+    if (isSystemTrayAvailable() && !cfg.showMainDialogAsNormalWindow()) {
         const auto position = computeWindowPosition(window->width(), window->height());
         window->setPosition(position);
     }
@@ -318,7 +326,9 @@ void Systray::forceWindowInit(QQuickWindow *window) const
 
 void Systray::onActiveChanged(QQuickWindow *window)
 {
-    if (isSystemTrayAvailable() && !window->isActive()) {
+    ConfigFile cfg;
+
+    if (isSystemTrayAvailable() && !window->isActive() && !cfg.showMainDialogAsNormalWindow()) {
         window->hide();
         setClosed();
     }
