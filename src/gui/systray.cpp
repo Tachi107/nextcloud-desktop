@@ -239,6 +239,11 @@ qreal Systray::windowHeight() const
     return systrayWindowHeight;
 }
 
+QString Systray::windowTitle() const
+{
+    return Theme::instance()->appNameGUI();
+}
+
 Q_INVOKABLE void Systray::setOpened()
 {
     _isOpen = true;

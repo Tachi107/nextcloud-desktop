@@ -58,6 +58,7 @@ public:
     qreal windowRadius() const;
     qreal windowWidth() const;
     qreal windowHeight() const;
+    QString windowTitle() const;
 
     Q_INVOKABLE void pauseResumeSync();
     Q_INVOKABLE bool syncIsPaused();
@@ -71,6 +72,7 @@ public:
     Q_PROPERTY(qreal windowRadius READ windowRadius)
     Q_PROPERTY(qreal windowWidth READ windowWidth)
     Q_PROPERTY(qreal windowHeight READ windowHeight)
+    Q_PROPERTY(QString windowTitle READ windowTitle)
 
 signals:
     void currentUserChanged();

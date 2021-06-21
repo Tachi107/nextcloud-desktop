@@ -14,6 +14,7 @@ import com.nextcloud.desktopclient 1.0
 Window {
     id:         trayWindow
 
+    title:      Systray.windowTitle
     width:      Systray.windowWidth
     height:     Systray.windowHeight
     color:      "transparent"
