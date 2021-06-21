@@ -14,21 +14,22 @@ import com.nextcloud.desktopclient 1.0
 Window {
     id:         trayWindow
 
-    width:      Style.trayWindowWidth
-    height:     Style.trayWindowHeight
+    width:      Systray.windowWidth
+    height:     Systray.windowHeight
     color:      "transparent"
-    flags:      Qt.Dialog | Qt.FramelessWindowHint
+    flags:      Systray.windowFlags
 
-    readonly property int maxMenuHeight: Style.trayWindowHeight - Style.trayWindowHeaderHeight - 2 * Style.trayWindowBorderWidth
+    readonly property int maxMenuHeight: Systray.windowHeight - Style.trayWindowHeaderHeight - 2 * Style.trayWindowBorderWidth
 
     Component.onCompleted: Systray.forceWindowInit(trayWindow)
 
     // Close tray window when focus is lost (e.g. click somewhere else on the screen)
     onActiveChanged: {
-        if(!active) {
-            trayWindow.hide();
-            Systray.setClosed();
-        }
+        Systray.onActiveChanged(trayWindow);
+}
+
+    onClosing: {
+        Systray.setClosed()
     }
 
     onVisibleChanged: {
@@ -75,7 +76,7 @@ Window {
         maskSource: Rectangle {
             width: trayWindowBackground.width
             height: trayWindowBackground.height
-            radius: trayWindowBackground.radius
+            radius: Systray.windowRadius
         }
     }
 
@@ -83,7 +84,7 @@ Window {
         id: trayWindowBackground
 
         anchors.fill:   parent
-        radius:         Style.trayWindowRadius
+        radius: Systray.windowRadius
         border.width:   Style.trayWindowBorderWidth
         border.color:   Style.menuBorder
 
@@ -411,6 +412,11 @@ Window {
                     }
                 }
 
+                // Add space between items
+                Item {
+                    Layout.fillWidth: true
+                }
+                
                 RowLayout {
                     id: openLocalFolderRowLayout
                     spacing: 0

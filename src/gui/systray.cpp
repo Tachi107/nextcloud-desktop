@@ -37,6 +37,12 @@
 #define NOTIFICATIONS_IFACE "org.freedesktop.Notifications"
 #endif
 
+namespace {
+constexpr qreal systrayWindowWidth = 400.0;
+constexpr qreal systrayWindowHeight = 510.0;
+constexpr qreal systrayWindowRadius = 10.0;
+}
+
 namespace OCC {
 
 Q_LOGGING_CATEGORY(lcSystray, "nextcloud.gui.systray")
@@ -197,6 +203,35 @@ bool Systray::isOpen()
     return _isOpen;
 }
 
+Qt::WindowFlags Systray::windowFlags() const
+{
+    if (isSystemTrayAvailable()) {
+        return Qt::Dialog | Qt::FramelessWindowHint;
+    }
+    return Qt::Dialog;
+}
+
+qreal Systray::windowRadius() const
+{
+    if (isSystemTrayAvailable()) {
+        return systrayWindowRadius;
+    }
+    return 0.0;
+}
+
+qreal Systray::windowWidth() const
+{
+    if (isSystemTrayAvailable()) {
+        return systrayWindowWidth;
+    }
+    return systrayWindowHeight;
+}
+
+qreal Systray::windowHeight() const
+{
+    return systrayWindowHeight;
+}
+
 Q_INVOKABLE void Systray::setOpened()
 {
     _isOpen = true;
@@ -258,8 +293,10 @@ void Systray::positionWindow(QQuickWindow *window) const
 {
     window->setScreen(currentScreen());
 
-    const auto position = computeWindowPosition(window->width(), window->height());
-    window->setPosition(position);
+    if (isSystemTrayAvailable()) {
+        const auto position = computeWindowPosition(window->width(), window->height());
+        window->setPosition(position);
+    }
 }
 
 void Systray::forceWindowInit(QQuickWindow *window) const
@@ -277,6 +314,14 @@ void Systray::forceWindowInit(QQuickWindow *window) const
     // normally cover a menu.
     OCC::setTrayWindowLevelAndVisibleOnAllSpaces(window);
 #endif
+}
+
+void Systray::onActiveChanged(QQuickWindow *window)
+{
+    if (isSystemTrayAvailable() && !window->isActive()) {
+        window->hide();
+        setClosed();
+    }
 }
 
 QScreen *Systray::currentScreen() const

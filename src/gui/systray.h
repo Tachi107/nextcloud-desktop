@@ -24,6 +24,7 @@ class QScreen;
 class QQmlApplicationEngine;
 class QQuickWindow;
 class QWindow;
+class QQuickWindow;
 
 namespace OCC {
 
@@ -53,6 +54,10 @@ public:
     void showMessage(const QString &title, const QString &message, MessageIcon icon = Information);
     void setToolTip(const QString &tip);
     bool isOpen();
+    Qt::WindowFlags windowFlags() const;
+    qreal windowRadius() const;
+    qreal windowWidth() const;
+    qreal windowHeight() const;
 
     Q_INVOKABLE void pauseResumeSync();
     Q_INVOKABLE bool syncIsPaused();
@@ -60,6 +65,12 @@ public:
     Q_INVOKABLE void setClosed();
     Q_INVOKABLE void positionWindow(QQuickWindow *window) const;
     Q_INVOKABLE void forceWindowInit(QQuickWindow *window) const;
+    Q_INVOKABLE void onActiveChanged(QQuickWindow *window);
+
+    Q_PROPERTY(Qt::WindowFlags windowFlags READ windowFlags)
+    Q_PROPERTY(qreal windowRadius READ windowRadius)
+    Q_PROPERTY(qreal windowWidth READ windowWidth)
+    Q_PROPERTY(qreal windowHeight READ windowHeight)
 
 signals:
     void currentUserChanged();
