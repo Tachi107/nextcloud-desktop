@@ -68,11 +68,11 @@ public:
     Q_INVOKABLE void forceWindowInit(QQuickWindow *window) const;
     Q_INVOKABLE void onActiveChanged(QQuickWindow *window);
 
-    Q_PROPERTY(Qt::WindowFlags windowFlags READ windowFlags)
-    Q_PROPERTY(qreal windowRadius READ windowRadius)
-    Q_PROPERTY(qreal windowWidth READ windowWidth)
-    Q_PROPERTY(qreal windowHeight READ windowHeight)
-    Q_PROPERTY(QString windowTitle READ windowTitle)
+    Q_PROPERTY(Qt::WindowFlags windowFlags READ windowFlags CONSTANT)
+    Q_PROPERTY(qreal windowRadius READ windowRadius CONSTANT)
+    Q_PROPERTY(qreal windowWidth READ windowWidth CONSTANT)
+    Q_PROPERTY(qreal windowHeight READ windowHeight CONSTANT)
+    Q_PROPERTY(QString windowTitle READ windowTitle CONSTANT)
 
 signals:
     void currentUserChanged();
