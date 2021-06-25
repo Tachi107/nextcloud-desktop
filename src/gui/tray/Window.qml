@@ -15,19 +15,23 @@ Window {
     id:         trayWindow
 
     title:      Systray.windowTitle
-    width:      Systray.windowWidth
-    height:     Systray.windowHeight
+    // If the main dialog is displayed as a regular window we want it to be quadratic
+    width:      if (Systray.normalWindow) { return Style.trayWindowHeight; } else { return Style.trayWindowWidth; }
+    height:     Style.trayWindowHeight
     color:      "transparent"
-    flags:      Systray.windowFlags
+    flags:      if (Systray.normalWindow) { return Qt.Dialog; } else { return Qt.Dialog | Qt.FramelessWindowHint; }
 
-    readonly property int maxMenuHeight: Systray.windowHeight - Style.trayWindowHeaderHeight - 2 * Style.trayWindowBorderWidth
+    readonly property int maxMenuHeight: Style.trayWindowHeight - Style.trayWindowHeaderHeight - 2 * Style.trayWindowBorderWidth
 
     Component.onCompleted: Systray.forceWindowInit(trayWindow)
 
     // Close tray window when focus is lost (e.g. click somewhere else on the screen)
     onActiveChanged: {
-        Systray.onActiveChanged(trayWindow);
-}
+        if (!Systray.normalWindow && !active) {
+            hide();
+            setClosed();
+        }
+   }
 
     onClosing: {
         Systray.setClosed()
@@ -53,7 +57,9 @@ Window {
             accountMenu.close();
             appsMenu.close();
 
-            Systray.positionWindow(trayWindow);
+            if (!Systray.normalWindow) {
+                Systray.positionWindow(trayWindow);
+            }
 
             trayWindow.show();
             trayWindow.raise();
@@ -77,7 +83,7 @@ Window {
         maskSource: Rectangle {
             width: trayWindowBackground.width
             height: trayWindowBackground.height
-            radius: Systray.windowRadius
+            radius: if (Systray.normalWindow) { return 0.0; } else { return Style.trayWindowRadius; }
         }
     }
 
@@ -85,7 +91,7 @@ Window {
         id: trayWindowBackground
 
         anchors.fill:   parent
-        radius: Systray.windowRadius
+        radius: if (Systray.normalWindow) { return 0.0; } else { return Style.trayWindowRadius; }
         border.width:   Style.trayWindowBorderWidth
         border.color:   Style.menuBorder
 

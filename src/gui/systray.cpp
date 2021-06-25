@@ -204,44 +204,19 @@ bool Systray::isOpen()
     return _isOpen;
 }
 
-Qt::WindowFlags Systray::windowFlags() const
-{
-    ConfigFile cfg;
-
-    if (isSystemTrayAvailable() && !cfg.showMainDialogAsNormalWindow()) {
-        return Qt::Dialog | Qt::FramelessWindowHint;
-    }
-    return Qt::Dialog;
-}
-
-qreal Systray::windowRadius() const
-{
-    ConfigFile cfg;
-
-    if (isSystemTrayAvailable() && !cfg.showMainDialogAsNormalWindow()) {
-        return systrayWindowRadius;
-    }
-    return 0.0;
-}
-
-qreal Systray::windowWidth() const
-{
-    ConfigFile cfg;
-
-    if (isSystemTrayAvailable() && !cfg.showMainDialogAsNormalWindow()) {
-        return systrayWindowWidth;
-    }
-    return systrayWindowHeight;
-}
-
-qreal Systray::windowHeight() const
-{
-    return systrayWindowHeight;
-}
-
 QString Systray::windowTitle() const
 {
     return Theme::instance()->appNameGUI();
+}
+
+bool Systray::normalWindow() const
+{
+    if (!isSystemTrayAvailable()) {
+        return true;
+    }
+
+    ConfigFile cfg;
+    return cfg.showMainDialogAsNormalWindow();
 }
 
 Q_INVOKABLE void Systray::setOpened()
@@ -327,16 +302,6 @@ void Systray::forceWindowInit(QQuickWindow *window) const
     // normally cover a menu.
     OCC::setTrayWindowLevelAndVisibleOnAllSpaces(window);
 #endif
-}
-
-void Systray::onActiveChanged(QQuickWindow *window)
-{
-    ConfigFile cfg;
-
-    if (isSystemTrayAvailable() && !window->isActive() && !cfg.showMainDialogAsNormalWindow()) {
-        window->hide();
-        setClosed();
-    }
 }
 
 QScreen *Systray::currentScreen() const

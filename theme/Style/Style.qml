@@ -18,6 +18,9 @@ QtObject {
     property int subLinePixelSize: 10
 
     // Dimensions and sizes
+    property int trayWindowWidth: 400
+    property int trayWindowHeight: 510
+    property int trayWindowRadius: 10
     property int trayWindowBorderWidth: 1
     property int trayWindowHeaderHeight: 60
 

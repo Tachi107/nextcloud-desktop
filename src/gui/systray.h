@@ -54,11 +54,8 @@ public:
     void showMessage(const QString &title, const QString &message, MessageIcon icon = Information);
     void setToolTip(const QString &tip);
     bool isOpen();
-    Qt::WindowFlags windowFlags() const;
-    qreal windowRadius() const;
-    qreal windowWidth() const;
-    qreal windowHeight() const;
     QString windowTitle() const;
+    bool normalWindow() const;
 
     Q_INVOKABLE void pauseResumeSync();
     Q_INVOKABLE bool syncIsPaused();
@@ -66,13 +63,9 @@ public:
     Q_INVOKABLE void setClosed();
     Q_INVOKABLE void positionWindow(QQuickWindow *window) const;
     Q_INVOKABLE void forceWindowInit(QQuickWindow *window) const;
-    Q_INVOKABLE void onActiveChanged(QQuickWindow *window);
 
-    Q_PROPERTY(Qt::WindowFlags windowFlags READ windowFlags CONSTANT)
-    Q_PROPERTY(qreal windowRadius READ windowRadius CONSTANT)
-    Q_PROPERTY(qreal windowWidth READ windowWidth CONSTANT)
-    Q_PROPERTY(qreal windowHeight READ windowHeight CONSTANT)
     Q_PROPERTY(QString windowTitle READ windowTitle CONSTANT)
+    Q_PROPERTY(QString normalWindow READ normalWindow CONSTANT)
 
 signals:
     void currentUserChanged();
