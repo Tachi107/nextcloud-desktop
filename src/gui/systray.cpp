@@ -38,12 +38,6 @@
 #define NOTIFICATIONS_IFACE "org.freedesktop.Notifications"
 #endif
 
-namespace {
-constexpr qreal systrayWindowWidth = 400.0;
-constexpr qreal systrayWindowHeight = 510.0;
-constexpr qreal systrayWindowRadius = 10.0;
-}
-
 namespace OCC {
 
 Q_LOGGING_CATEGORY(lcSystray, "nextcloud.gui.systray")
@@ -209,7 +203,7 @@ QString Systray::windowTitle() const
     return Theme::instance()->appNameGUI();
 }
 
-bool Systray::normalWindow() const
+bool Systray::useNormalWindow() const
 {
     if (!isSystemTrayAvailable()) {
         return true;

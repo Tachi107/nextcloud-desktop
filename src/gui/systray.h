@@ -42,6 +42,10 @@ class Systray
     : public QSystemTrayIcon
 {
     Q_OBJECT
+
+    Q_PROPERTY(QString windowTitle READ windowTitle CONSTANT)
+    Q_PROPERTY(QString useNormalWindow READ useNormalWindow CONSTANT)
+
 public:
     static Systray *instance();
     virtual ~Systray() = default;
@@ -55,7 +59,7 @@ public:
     void setToolTip(const QString &tip);
     bool isOpen();
     QString windowTitle() const;
-    bool normalWindow() const;
+    bool useNormalWindow() const;
 
     Q_INVOKABLE void pauseResumeSync();
     Q_INVOKABLE bool syncIsPaused();
@@ -63,9 +67,6 @@ public:
     Q_INVOKABLE void setClosed();
     Q_INVOKABLE void positionWindow(QQuickWindow *window) const;
     Q_INVOKABLE void forceWindowInit(QQuickWindow *window) const;
-
-    Q_PROPERTY(QString windowTitle READ windowTitle CONSTANT)
-    Q_PROPERTY(QString normalWindow READ normalWindow CONSTANT)
 
 signals:
     void currentUserChanged();

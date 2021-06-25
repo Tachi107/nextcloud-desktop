@@ -16,10 +16,10 @@ Window {
 
     title:      Systray.windowTitle
     // If the main dialog is displayed as a regular window we want it to be quadratic
-    width:      if (Systray.normalWindow) { return Style.trayWindowHeight; } else { return Style.trayWindowWidth; }
+    width:      Systray.useNormalWindow ? Style.trayWindowHeight : Style.trayWindowWidth
     height:     Style.trayWindowHeight
     color:      "transparent"
-    flags:      if (Systray.normalWindow) { return Qt.Dialog; } else { return Qt.Dialog | Qt.FramelessWindowHint; }
+    flags:      Systray.useNormalWindow ? Qt.Dialog : Qt.Dialog | Qt.FramelessWindowHint
 
     readonly property int maxMenuHeight: Style.trayWindowHeight - Style.trayWindowHeaderHeight - 2 * Style.trayWindowBorderWidth
 
@@ -27,7 +27,7 @@ Window {
 
     // Close tray window when focus is lost (e.g. click somewhere else on the screen)
     onActiveChanged: {
-        if (!Systray.normalWindow && !active) {
+        if (!Systray.useNormalWindow && !active) {
             hide();
             setClosed();
         }
@@ -57,7 +57,7 @@ Window {
             accountMenu.close();
             appsMenu.close();
 
-            if (!Systray.normalWindow) {
+            if (!Systray.useNormalWindow) {
                 Systray.positionWindow(trayWindow);
             }
 
@@ -83,7 +83,7 @@ Window {
         maskSource: Rectangle {
             width: trayWindowBackground.width
             height: trayWindowBackground.height
-            radius: if (Systray.normalWindow) { return 0.0; } else { return Style.trayWindowRadius; }
+            radius: Systray.useNormalWindow ? 0.0 : Style.trayWindowRadius
         }
     }
 
@@ -91,7 +91,7 @@ Window {
         id: trayWindowBackground
 
         anchors.fill:   parent
-        radius: if (Systray.normalWindow) { return 0.0; } else { return Style.trayWindowRadius; }
+        radius: Systray.useNormalWindow ? 0.0 : Style.trayWindowRadius
         border.width:   Style.trayWindowBorderWidth
         border.color:   Style.menuBorder
 
