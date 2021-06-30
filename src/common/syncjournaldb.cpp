@@ -47,7 +47,7 @@ Q_LOGGING_CATEGORY(lcDb, "nextcloud.sync.database", QtInfoMsg)
 
 #define GET_FILE_RECORD_QUERY \
         "SELECT path, inode, modtime, type, md5, fileid, remotePerm, filesize," \
-        "  ignoredChildrenRemote, contentchecksumtype.name || ':' || contentChecksum, e2eMangledName, isE2eEncrypted, fileSizeNonE2EE " \
+        "  ignoredChildrenRemote, contentchecksumtype.name || ':' || contentChecksum, e2eMangledName, isE2eEncrypted " \
         " FROM metadata" \
         "  LEFT JOIN checksumtype as contentchecksumtype ON metadata.contentChecksumTypeId == contentchecksumtype.id"
 
@@ -65,11 +65,6 @@ static void fillFileRecordFromGetQuery(SyncJournalFileRecord &rec, SqlQuery &que
     rec._checksumHeader = query.baValue(9);
     rec._e2eMangledName = query.baValue(10);
     rec._isE2eEncrypted = query.intValue(11) > 0;
-    rec._fileSizeNonE2EE = query.int64Value(12);
-    Q_ASSERT(!rec._e2eMangledName.isEmpty() || rec._fileSizeNonE2EE == 0);
-    if (rec._e2eMangledName.isEmpty() && rec._fileSizeNonE2EE != 0) {
-        qCWarning(lcDb) << "fileSizeNonE2EE is non-zero for non-encrypted record.";
-    }
 }
 
 static QByteArray defaultJournalMode(const QString &dbPath)
@@ -385,7 +380,6 @@ bool SyncJournalDb::checkConnect()
                         // ignoredChildrenRemote
                         // contentChecksum
                         // contentChecksumTypeId
-                        // fileSizeNonE2EE
                         "PRIMARY KEY(phash)"
                         ");");
 
@@ -777,16 +771,6 @@ bool SyncJournalDb::updateMetadataTableStructure()
         commitInternal(QStringLiteral("update database structure: add isE2eEncrypted col"));
     }
 
-    if (columns.indexOf("fileSizeNonE2EE") == -1) {
-        SqlQuery query(_db);
-        query.prepare("ALTER TABLE metadata ADD COLUMN fileSizeNonE2EE BIGINT;");
-        if (!query.exec()) {
-            sqlFail(QStringLiteral("updateDatabaseStructure: add column fileSizeNonE2EE"), query);
-            re = false;
-        }
-        commitInternal(QStringLiteral("update database structure: add fileSizeNonE2EE col"));
-    }
-
     auto uploadInfoColumns = tableColumns("uploadinfo");
     if (uploadInfoColumns.isEmpty())
         return false;
@@ -916,16 +900,6 @@ qint64 SyncJournalDb::getPHash(const QByteArray &file)
 
 bool SyncJournalDb::setFileRecord(const SyncJournalFileRecord &_record)
 {
-    Q_ASSERT(_record._e2eMangledName.isEmpty() || _record._fileSizeNonE2EE != 0);
-    if (!_record._e2eMangledName.isEmpty() && _record._fileSizeNonE2EE == 0) {
-        qCWarning(lcDb) << "Set file record with a zero non E2EE size for an E2EE encrypted file.";
-    }
-
-    Q_ASSERT(!_record._e2eMangledName.isEmpty() || _record._fileSizeNonE2EE == 0);
-    if (_record._e2eMangledName.isEmpty() && _record._fileSizeNonE2EE != 0) {
-        qCWarning(lcDb) << "Set file record for a non-E2EE encrypted file with a non-zero E2EE size.";
-    }
-
     SyncJournalFileRecord record = _record;
     QMutexLocker locker(&_mutex);
 
@@ -964,8 +938,8 @@ bool SyncJournalDb::setFileRecord(const SyncJournalFileRecord &_record)
 
         if (!_setFileRecordQuery.initOrReset(QByteArrayLiteral(
             "INSERT OR REPLACE INTO metadata "
-            "(phash, pathlen, path, inode, uid, gid, mode, modtime, type, md5, fileid, remotePerm, filesize, ignoredChildrenRemote, contentChecksum, contentChecksumTypeId, e2eMangledName, isE2eEncrypted, fileSizeNonE2EE) "
-            "VALUES (?1 , ?2, ?3 , ?4 , ?5 , ?6 , ?7,  ?8 , ?9 , ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19);"), _db)) {
+            "(phash, pathlen, path, inode, uid, gid, mode, modtime, type, md5, fileid, remotePerm, filesize, ignoredChildrenRemote, contentChecksum, contentChecksumTypeId, e2eMangledName, isE2eEncrypted) "
+            "VALUES (?1 , ?2, ?3 , ?4 , ?5 , ?6 , ?7,  ?8 , ?9 , ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18);"), _db)) {
             return false;
         }
 
@@ -987,7 +961,6 @@ bool SyncJournalDb::setFileRecord(const SyncJournalFileRecord &_record)
         _setFileRecordQuery.bindValue(16, contentChecksumTypeId);
         _setFileRecordQuery.bindValue(17, record._e2eMangledName);
         _setFileRecordQuery.bindValue(18, record._isE2eEncrypted);
-        _setFileRecordQuery.bindValue(19, record._fileSizeNonE2EE);
 
         if (!_setFileRecordQuery.exec()) {
             return false;

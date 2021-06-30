@@ -346,7 +346,6 @@ void ProcessDirectoryJob::processFile(PathTuple path,
     item->_file = path._target;
     item->_originalFile = path._original;
     item->_previousSize = dbEntry._fileSize;
-    item->_previousSizeNonE2EE = dbEntry._fileSizeNonE2EE;
     item->_previousModtime = dbEntry._modtime;
 
     // The item shall only have this type if the db request for the virtual download
@@ -503,11 +502,6 @@ void ProcessDirectoryJob::processFileAnalyzeRemoteInfo(
     item->_direction = SyncFileItem::Down;
     item->_modtime = serverEntry.modtime;
     item->_size = serverEntry.size;
-
-    if (!serverEntry.e2eMangledName.isEmpty()) {
-        // we've received an encrypted server entry, so, we must store it's actual size (without the E2EE tag at the end)
-        item->_sizeNonE2EE = serverEntry.size - OCC::CommonConstants::e2EeTagSize;
-    }
 
     auto postProcessServerNew = [=] () {
         auto tmp_path = path;
@@ -830,7 +824,6 @@ void ProcessDirectoryJob::processFileAnalyzeLocalInfo(
                 item->_instruction = CSYNC_INSTRUCTION_SYNC;
                 item->_type = ItemTypeVirtualFileDownload;
                 item->_previousSize = 1;
-                item->_previousSizeNonE2EE = 1;
             }
         } else if (serverModified
             || (isVfsWithSuffix() && dbEntry.isVirtualFile())) {
@@ -1198,9 +1191,6 @@ void ProcessDirectoryJob::processFileConflict(const SyncFileItemPtr &item, Proce
             rec._modtime = serverEntry.modtime;
             rec._type = item->_type;
             rec._fileSize = serverEntry.size;
-            if (!serverEntry.e2eMangledName.isEmpty()) {
-                rec._fileSizeNonE2EE = serverEntry.size - OCC::CommonConstants::e2EeTagSize;
-            }
             rec._remotePerm = serverEntry.remotePerm;
             rec._checksumHeader = serverEntry.checksumHeader;
             _discoveryData->_statedb->setFileRecord(rec);
