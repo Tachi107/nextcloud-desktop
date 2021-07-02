@@ -81,16 +81,12 @@ SyncFileItemPtr SyncFileItem::fromSyncJournalFileRecord(const SyncJournalFileRec
 
 qint64 SyncFileItem::sizeForVfsPlaceholder() const
 {
-    if (isDirectory() || _type == ItemTypeVirtualFileDownload) {
+    if (isDirectory()) {
         // size is always the same for directories and the placeholders that are currently bying hydrated
         return _size;
     }
 
-    if (_type == ItemTypeVirtualFile) {
-        return _size - CommonConstants::e2EeTagSize;
-    }
-
-    return _size;
+    return _size - 16;
 }
 
 }
