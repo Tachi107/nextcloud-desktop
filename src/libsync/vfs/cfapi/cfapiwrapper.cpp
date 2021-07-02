@@ -204,7 +204,8 @@ void CALLBACK cfApiFetchDataCallback(const CF_CALLBACK_INFO *callbackInfo, const
     QObject::connect(vfs, &OCC::VfsCfApi::hydrationRequestFinished, &loop, [&](const QString &id) {
         qDebug(lcCfApiWrapper) << "Hydration finished for request" << id;
         if (requestId == id) {
-            socket.close();
+            // TODO: Please revert me when this PR is ready for review...
+            // socket.close();
             signalSocket.close();
             loop.quit();
         }
