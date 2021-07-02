@@ -86,6 +86,10 @@ qint64 SyncFileItem::sizeForVfsPlaceholder() const
         return _size;
     }
 
+    if (_type == ItemTypeVirtualFile) {
+        return _size - CommonConstants::e2EeTagSize;
+    }
+
     return _size;
 }
 
